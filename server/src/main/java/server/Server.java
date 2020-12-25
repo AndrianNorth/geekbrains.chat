@@ -1,9 +1,9 @@
 package server;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -17,13 +17,17 @@ public class Server {
     List<ClientHandler> clients;
     private AuthService authService;
 
-    public Server() throws SQLException {
+    public Server() {
         clients = new Vector<>();
+//        authService = new SimpleAuthService();
 
-        if(!SQLHandler.connect()) {
-            throw new RuntimeException("Не удалось подключится");
+        //==============//
+        if (!SQLHandler.connect()) {
+            throw new RuntimeException("Не удалось подключиться к БД");
         }
-        authService = new SimpleAuthService();
+        authService = new DBAuthServise();
+        //==============//
+
 
         try {
             server = new ServerSocket(PORT);
@@ -37,7 +41,9 @@ public class Server {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
+            //==============//
             SQLHandler.disconnect();
+            //==============//
             try {
                 server.close();
             } catch (IOException e) {
@@ -52,6 +58,21 @@ public class Server {
         String message = String.format("%s %s : %s", formater.format(new Date()), sender.getNickname(), msg);
         for (ClientHandler client : clients) {
             client.sendMsg(message + "\n");
+            userHistory(sender, msg, client);
+        }
+    }
+
+    void userHistory(ClientHandler sender, String msg, ClientHandler client) {
+        try{
+            byte[] outdata = msg.getBytes();
+            byte[] senderNickname = sender.getNickname().getBytes();
+            FileOutputStream out = new FileOutputStream("history_" + client.getNickname() + ".txt", true);
+            out.write(senderNickname);
+            out.write(": ".getBytes());
+            out.write(outdata);
+            out.write(System.getProperty("line.separator").getBytes());
+    } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
