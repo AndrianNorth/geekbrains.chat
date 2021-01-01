@@ -8,6 +8,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server {
 
@@ -16,10 +18,16 @@ public class Server {
     Socket socket = null;
     List<ClientHandler> clients;
     private AuthService authService;
+    private ExecutorService executorService;
+
+    public ExecutorService getExecutorService(){
+        return executorService;
+    }
 
     public Server() {
         clients = new Vector<>();
 //        authService = new SimpleAuthService();
+        executorService = Executors.newFixedThreadPool(1000);
 
         //==============//
         if (!SQLHandler.connect()) {
@@ -43,6 +51,7 @@ public class Server {
         } finally {
             //==============//
             SQLHandler.disconnect();
+            executorService.shutdown();
             //==============//
             try {
                 server.close();
